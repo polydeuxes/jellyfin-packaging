@@ -225,3 +225,18 @@ Inside this repository are 7 major components:
 * Full architecture support
 
    The portable builds support all major architectures now, specifically adding `arm64` Windows builds (I'm certain that _someone_ out there uses it), and making it quite trivial to add new architectures in the future if needed.
+
+## File permissions for shared media
+
+Jellyfin-created metadata, artwork, and extracted subtitles follow the process umask. On Debian or Ubuntu, edit `/etc/systemd/system/jellyfin.service.d/override.conf` or the packaged `jellyfin.service.conf` to set `UMask=0002` for group-writable files, or `UMask=0007` to also deny access to other users. Set the Jellyfin service account and media directories to the intended shared group; existing files keep their current modes. Restart Jellyfin after changing the service configuration.
+
+For an RPM installation that uses systemd, create a service drop-in with the same setting:
+
+```ini
+[Service]
+UMask=0007
+```
+
+Run `systemctl daemon-reload` and restart Jellyfin. This repository does not contain an RPM service template.
+
+For the official Docker image, set the umask in the container process before starting Jellyfin. For example, replace the image entrypoint with `/bin/sh` and pass `-c "umask 0007; exec /jellyfin/jellyfin"`. Keep the existing container user, group, volumes, and other run options. Docker Compose `user:` and environment variables alone do not set the process umask.
