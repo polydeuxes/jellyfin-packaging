@@ -239,4 +239,13 @@ UMask=0007
 
 Run `systemctl daemon-reload` and restart Jellyfin. This repository does not contain an RPM service template.
 
-For the official Docker image, set the umask in the container process before starting Jellyfin. For example, replace the image entrypoint with `/bin/sh` and pass `-c "umask 0007; exec /jellyfin/jellyfin"`. Keep the existing container user, group, volumes, and other run options. Docker Compose `user:` and environment variables alone do not set the process umask.
+For the official Docker image, set the umask in the container process before starting Jellyfin:
+
+```sh
+docker run --rm --name jellyfin -p 8096:8096 \
+  -v jellyfin-config:/config -v jellyfin-cache:/cache \
+  --entrypoint /bin/sh jellyfin/jellyfin:latest \
+  -c 'umask 0007; exec /jellyfin/jellyfin'
+```
+
+Add your media mounts and any required user, group, or other run options. The image's normal entrypoint is `/jellyfin/jellyfin`; the shell sets its umask before replacing itself with that executable. Docker Compose `user:` and environment variables alone do not set the process umask.
